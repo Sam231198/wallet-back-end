@@ -1,0 +1,303 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API Carteira Virtual",
+        "description": "Documentação da API Carteira Virtual",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Conta"
+                ],
+                "summary": "Autentica um usuário",
+                "operationId": "b708e1d7547d41c6e58ad59fe32d2a2c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login realizado com sucesso"
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas"
+                    }
+                }
+            }
+        },
+        "/api/contas": {
+            "post": {
+                "tags": [
+                    "Conta"
+                ],
+                "summary": "Cria nova conta com carteira",
+                "operationId": "8ab25f9218549ac07e9720be839d8458",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "minLength": 6
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Conta criada com sucesso"
+                    },
+                    "400": {
+                        "description": "Dados inválidos"
+                    }
+                }
+            }
+        },
+        "/api/conta": {
+            "get": {
+                "tags": [
+                    "Conta"
+                ],
+                "summary": "Retorna dados da conta autenticada",
+                "operationId": "004befa819612ca3f627613f4be1abc1",
+                "responses": {
+                    "200": {
+                        "description": "Dados da conta retornados com sucesso"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "404": {
+                        "description": "Conta não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/logout": {
+            "post": {
+                "tags": [
+                    "Conta"
+                ],
+                "summary": "Faz logout do usuário autenticado",
+                "operationId": "e97f807a89d54b3225ebdbebe2ac7775",
+                "responses": {
+                    "200": {
+                        "description": "Logout realizado com sucesso"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/wallets/{walletId}/history": {
+            "get": {
+                "tags": [
+                    "Operações"
+                ],
+                "summary": "Retorna histórico de operações da carteira",
+                "operationId": "00ba308bf5e9d3ec4448ef5b9e0149ff",
+                "parameters": [
+                    {
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Histórico retornado com sucesso"
+                    },
+                    "400": {
+                        "description": "Erro ao buscar histórico"
+                    }
+                }
+            }
+        },
+        "/api/operations/deposit": {
+            "post": {
+                "tags": [
+                    "Operações"
+                ],
+                "summary": "Depósito em carteira",
+                "operationId": "04cffe694bb64c93bab1147ce3d088dc",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "wallet_id",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "wallet_id": {
+                                        "type": "integer"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Depósito realizado com sucesso"
+                    },
+                    "400": {
+                        "description": "Erro no depósito"
+                    }
+                }
+            }
+        },
+        "/api/operations/withdraw": {
+            "post": {
+                "tags": [
+                    "Operações"
+                ],
+                "summary": "Saque de carteira",
+                "operationId": "1f0ae2a63427bd8cb29a9d8641aaa3ad",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "wallet_id",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "wallet_id": {
+                                        "type": "integer"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Saque realizado com sucesso"
+                    },
+                    "400": {
+                        "description": "Erro no saque"
+                    }
+                }
+            }
+        },
+        "/api/operations/transfer": {
+            "post": {
+                "tags": [
+                    "Operações"
+                ],
+                "summary": "Transferência entre carteiras",
+                "operationId": "49d6acf9f74b2b766dae4f4062a9fa3c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "from_wallet_id",
+                                    "to_wallet_id",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "from_wallet_id": {
+                                        "type": "integer"
+                                    },
+                                    "to_wallet_id": {
+                                        "type": "integer"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Transferência realizada com sucesso"
+                    },
+                    "400": {
+                        "description": "Erro na transferência"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Conta",
+            "description": "API para autenticação e gerenciamento de conta"
+        },
+        {
+            "name": "Operações",
+            "description": "API para operações de carteira"
+        }
+    ]
+}
