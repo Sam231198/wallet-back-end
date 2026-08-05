@@ -16,6 +16,13 @@ class WalletRepository
         return $wallet ? WalletEntity::fromArray($wallet->toArray()) : null;
     }
 
+    public function getByUserId(int $userId): ?WalletEntity
+    {
+        $wallet = $this->wallet->where('user_id', $userId)->first();
+
+        return $wallet ? WalletEntity::fromArray($wallet->toArray()) : null;
+    }
+
     public function create(WalletEntity $walletEntity): WalletEntity
     {
         $wallet = $this->wallet->create($walletEntity->toArray());
