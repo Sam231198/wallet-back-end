@@ -54,8 +54,7 @@ class OperationService
                     ];
                 }
 
-                $wallet->balance = $wallet->balance + $amount;
-                $updatedWallet = $this->walletRepository->update($wallet->id, $wallet);
+                $updatedWallet = $this->walletRepository->incrementBalance($wallet->id, $amount);
 
                 $this->recordTransation($wallet->id, $amount, 'credit');
 
@@ -65,7 +64,6 @@ class OperationService
                 ];
             });
         } catch (\Exception $e) {
-            $this->recordTransation($userId, $amount, 'credit', 0, 'Falha no depósito');
             Log::error('Deposit failed: '.$e->getMessage());
 
             return [
@@ -95,9 +93,7 @@ class OperationService
                     ];
                 }
 
-                $wallet->balance = $wallet->balance - $amount;
-
-                $updatedWallet = $this->walletRepository->update($walletId, $wallet);
+                $updatedWallet = $this->walletRepository->decrementBalance($walletId, $amount);
 
                 $this->recordTransation($walletId, $amount, 'debit');
 
@@ -107,7 +103,6 @@ class OperationService
                 ];
             });
         } catch (\Exception $e) {
-            $this->recordTransation($walletId, $amount, 'debit', 0, 'Falha no saque');
             Log::error('Debit failed: '.$e->getMessage());
 
             return [
@@ -141,7 +136,6 @@ class OperationService
                 $result = $this->walletRepository->tranfer($fromWalletId, $toWalletId, $amount);
 
                 $this->recordTransation($fromWalletId, $amount, 'transfer', $toWalletId);
-                $this->recordTransation($toWalletId, $amount, 'transfer', $fromWalletId);
 
                 return [
                     'status' => 201,
@@ -149,8 +143,6 @@ class OperationService
                 ];
             });
         } catch (\Exception $e) {
-            $this->recordTransation($fromWalletId, $amount, 'transfer', $toWalletId, 'Falha na transferência');
-            $this->recordTransation($toWalletId, $amount, 'transfer', $fromWalletId, 'Falha na transferência');
             Log::error('Transfer failed: '.$e->getMessage());
 
             return [
@@ -162,28 +154,26 @@ class OperationService
 
     public function recoveryTransfer(int $transationId): array
     {
-        try {
-            $transation = $this->transationRepository->getById($transationId);
+        $transation = $this->transationRepository->getById($transationId);
 
-            if (! $transation) {
-                return [
-                    'status' => 404,
-                    'content' => 'Transation not found',
-                ];
-            }
+        if (! $transation) {
+            return [
+                'status' => 404,
+                'content' => 'Transation not found',
+            ];
+        }
+
+        try {
 
             $result = $this->walletRepository->tranfer($transation->wallet_transfer_id, $transation->wallet_id, $transation->amount);
 
             $this->recordTransation($transation->wallet_id, $transation->amount, 'reverse', $transation->wallet_transfer_id, 'Recovery transfer');
-            $this->recordTransation($transation->wallet_transfer_id, $transation->amount, 'reverse', $transation->wallet_id, 'Recovery transfer');
 
             return [
                 'status' => 201,
                 'content' => $result,
             ];
         } catch (\Exception $e) {
-            $this->recordTransation($transation->wallet_id, $transation->amount, 'reverse', $transation->wallet_transfer_id, 'Falha na recuperação da transferência');
-            $this->recordTransation($transation->wallet_transfer_id, $transation->amount, 'reverse', $transation->wallet_id, 'Falha na recuperação da transferência');
             Log::error('Recovery transfer failed: '.$e->getMessage());
 
             return [
@@ -193,10 +183,10 @@ class OperationService
         }
     }
 
-    private function recordTransation(int $userId, float $amount, string $type, ?int $walletIdTransfer = null, string $message = ''): void
+    private function recordTransation(int $walletId, float $amount, string $type, ?int $walletIdTransfer = null, string $message = ''): void
     {
         $transition = TransationEntity::fromArray([
-            'user_id' => $userId,
+            'wallet_id' => $walletId,
             'amount' => $amount,
             'type' => $type,
             'wallet_transfer_id' => $walletIdTransfer,

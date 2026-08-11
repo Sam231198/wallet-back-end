@@ -43,6 +43,32 @@ class WalletRepository
         return WalletEntity::fromArray($wallet->toArray());
     }
 
+    public function incrementBalance(int $id, float $amount): WalletEntity
+    {
+        $wallet = $this->wallet->find($id);
+
+        if (!$wallet) {
+            throw new \Exception("Wallet not found");
+        }
+
+        $wallet->increment('balance', $amount);
+
+        return WalletEntity::fromArray($wallet->toArray());
+    }
+
+    public function decrementBalance(int $id, float $amount): WalletEntity
+    {
+        $wallet = $this->wallet->find($id);
+
+        if (!$wallet) {
+            throw new \Exception("Wallet not found");
+        }
+
+        $wallet->decrement('balance', $amount);
+
+        return WalletEntity::fromArray($wallet->toArray());
+    }
+
     public function tranfer(int $fromWalletId, int $toWalletId, float $amount): bool
     {
         Wallet::where('id', $fromWalletId)->decrement('balance', $amount);

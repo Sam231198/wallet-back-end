@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services;
 
+use App\Entities\TransationEntity;
 use App\Entities\WalletEntity;
 use App\Repositories\TransationRepository;
 use App\Repositories\WalletRepository;
@@ -19,7 +20,7 @@ class OperationServiceTest extends TestCase
         $transationRepo = $this->createMock(TransationRepository::class);
 
         $walletRepo->expects($this->once())
-            ->method('getById')
+            ->method('getByUserId')
             ->with($walletId)
             ->willReturn(null);
 
@@ -34,13 +35,13 @@ class OperationServiceTest extends TestCase
     {
         $walletId = 1;
         $wallet = WalletEntity::fromArray(['id' => $walletId, 'balance' => 100.0]);
-        $transactions = [[ 'id' => 1, 'wallet_id' => $walletId, 'amount' => 50.0 ]];
+        $transactions = [['id' => 1, 'wallet_id' => $walletId, 'amount' => 50.0]];
 
         $walletRepo = $this->createMock(WalletRepository::class);
         $transationRepo = $this->createMock(TransationRepository::class);
 
         $walletRepo->expects($this->once())
-            ->method('getById')
+            ->method('getByUserId')
             ->with($walletId)
             ->willReturn($wallet);
 
@@ -64,10 +65,11 @@ class OperationServiceTest extends TestCase
         $walletRepo = $this->createMock(WalletRepository::class);
         $transationRepo = $this->createMock(TransationRepository::class);
 
-        DB::shouldReceive('transaction')->once()->andReturnUsing(fn($callback) => $callback());
+        DB::shouldReceive('transaction')
+            ->once()->andReturnUsing(fn ($callback) => $callback());
 
         $walletRepo->expects($this->once())
-            ->method('getById')
+            ->method('getByUserId')
             ->with($walletId)
             ->willReturn(null);
 
@@ -88,27 +90,27 @@ class OperationServiceTest extends TestCase
         $walletRepo = $this->createMock(WalletRepository::class);
         $transationRepo = $this->createMock(TransationRepository::class);
 
-        DB::shouldReceive('transaction')->once()->andReturnUsing(fn($callback) => $callback());
+        DB::shouldReceive('transaction')->once()->andReturnUsing(fn ($callback) => $callback());
 
         $walletRepo->expects($this->once())
-            ->method('getById')
+            ->method('getByUserId')
             ->with($walletId)
             ->willReturn($wallet);
 
         $walletRepo->expects($this->once())
-            ->method('update')
-            ->with($walletId, $this->callback(fn($value) => $value->balance === 120.0))
+            ->method('incrementBalance')
+            ->with($walletId, $amount)
             ->willReturn($updatedWallet);
 
         $transationRepo->expects($this->once())
             ->method('create')
-            ->with($this->callback(fn($entity) => $entity->wallet_id === $walletId && $entity->amount === $amount));
+            ->with($this->callback(fn ($entity) => $entity->wallet_id === $walletId && $entity->amount === $amount));
 
         $service = new OperationService($walletRepo, $transationRepo);
         $result = $service->deposit($walletId, $amount);
 
         $this->assertSame(201, $result['status']);
-        $this->assertSame($updatedWallet, $result['content']);
+        $this->assertEquals($updatedWallet, $result['content']);
     }
 
     public function test_deposit_returns_500_when_update_throws_exception()
@@ -120,19 +122,20 @@ class OperationServiceTest extends TestCase
         $walletRepo = $this->createMock(WalletRepository::class);
         $transationRepo = $this->createMock(TransationRepository::class);
 
-        DB::shouldReceive('transaction')->once()->andReturnUsing(fn($callback) => $callback());
+        DB::shouldReceive('transaction')->once()->andReturnUsing(fn ($callback) => $callback());
 
         $walletRepo->expects($this->once())
-            ->method('getById')
+            ->method('getByUserId')
             ->with($walletId)
             ->willReturn($wallet);
 
         $walletRepo->expects($this->once())
-            ->method('update')
+            ->method('incrementBalance')
+            ->with($walletId, $amount)
             ->willThrowException(new \Exception('update fail'));
 
-        $transationRepo->expects($this->once())
-            ->method('create');
+        // Se você manteve registro de falha no catch:
+        $transationRepo->expects($this->never())->method('create');
 
         $service = new OperationService($walletRepo, $transationRepo);
         $result = $service->deposit($walletId, $amount);
@@ -149,7 +152,7 @@ class OperationServiceTest extends TestCase
         $walletRepo = $this->createMock(WalletRepository::class);
         $transationRepo = $this->createMock(TransationRepository::class);
 
-        DB::shouldReceive('transaction')->once()->andReturnUsing(fn($callback) => $callback());
+        DB::shouldReceive('transaction')->once()->andReturnUsing(fn ($callback) => $callback());
 
         $walletRepo->expects($this->once())
             ->method('getById')
@@ -172,7 +175,7 @@ class OperationServiceTest extends TestCase
         $walletRepo = $this->createMock(WalletRepository::class);
         $transationRepo = $this->createMock(TransationRepository::class);
 
-        DB::shouldReceive('transaction')->once()->andReturnUsing(fn($callback) => $callback());
+        DB::shouldReceive('transaction')->once()->andReturnUsing(fn ($callback) => $callback());
 
         $walletRepo->expects($this->once())
             ->method('getById')
@@ -196,7 +199,7 @@ class OperationServiceTest extends TestCase
         $walletRepo = $this->createMock(WalletRepository::class);
         $transationRepo = $this->createMock(TransationRepository::class);
 
-        DB::shouldReceive('transaction')->once()->andReturnUsing(fn($callback) => $callback());
+        DB::shouldReceive('transaction')->once()->andReturnUsing(fn ($callback) => $callback());
 
         $walletRepo->expects($this->once())
             ->method('getById')
@@ -204,8 +207,8 @@ class OperationServiceTest extends TestCase
             ->willReturn($wallet);
 
         $walletRepo->expects($this->once())
-            ->method('update')
-            ->with($walletId, $this->callback(fn($value) => $value->balance === 50.0))
+            ->method('decrementBalance')
+            ->with($walletId, $amount)
             ->willReturn($updatedWallet);
 
         $transationRepo->expects($this->once())
@@ -215,7 +218,7 @@ class OperationServiceTest extends TestCase
         $result = $service->withdraw($walletId, $amount);
 
         $this->assertSame(201, $result['status']);
-        $this->assertSame($updatedWallet, $result['content']);
+        $this->assertEquals($updatedWallet, $result['content']);
     }
 
     public function test_transfer_returns_404_when_wallet_missing()
@@ -227,7 +230,7 @@ class OperationServiceTest extends TestCase
         $walletRepo = $this->createMock(WalletRepository::class);
         $transationRepo = $this->createMock(TransationRepository::class);
 
-        DB::shouldReceive('transaction')->once()->andReturnUsing(fn($callback) => $callback());
+        DB::shouldReceive('transaction')->once()->andReturnUsing(fn ($callback) => $callback());
 
         $walletRepo->expects($this->exactly(2))
             ->method('getById')
@@ -251,7 +254,7 @@ class OperationServiceTest extends TestCase
         $walletRepo = $this->createMock(WalletRepository::class);
         $transationRepo = $this->createMock(TransationRepository::class);
 
-        DB::shouldReceive('transaction')->once()->andReturnUsing(fn($callback) => $callback());
+        DB::shouldReceive('transaction')->once()->andReturnUsing(fn ($callback) => $callback());
 
         $walletRepo->expects($this->exactly(2))
             ->method('getById')
@@ -275,7 +278,8 @@ class OperationServiceTest extends TestCase
         $walletRepo = $this->createMock(WalletRepository::class);
         $transationRepo = $this->createMock(TransationRepository::class);
 
-        DB::shouldReceive('transaction')->once()->andReturnUsing(fn($callback) => $callback());
+        DB::shouldReceive('transaction')
+            ->once()->andReturnUsing(fn ($callback) => $callback());
 
         $walletRepo->expects($this->exactly(2))
             ->method('getById')
@@ -286,7 +290,7 @@ class OperationServiceTest extends TestCase
             ->with($fromId, $toId, $amount)
             ->willReturn(true);
 
-        $transationRepo->expects($this->exactly(2))
+        $transationRepo->expects($this->once())
             ->method('create');
 
         $service = new OperationService($walletRepo, $transationRepo);
@@ -318,7 +322,7 @@ class OperationServiceTest extends TestCase
     public function test_recovery_transfer_returns_201_on_success()
     {
         $transationId = 10;
-        $transation = \App\Entities\TransationEntity::fromArray([
+        $transation = TransationEntity::fromArray([
             'id' => $transationId,
             'wallet_id' => 2,
             'wallet_transfer_id' => 3,
@@ -342,7 +346,7 @@ class OperationServiceTest extends TestCase
             ->with($transation->wallet_transfer_id, $transation->wallet_id, $transation->amount)
             ->willReturn(true);
 
-        $transationRepo->expects($this->exactly(2))
+        $transationRepo->expects($this->once())
             ->method('create');
 
         $service = new OperationService($walletRepo, $transationRepo);

@@ -74,7 +74,7 @@ class OperationController extends Controller
     public function deposit(Request $request)
     {
         $data = $request->validate([
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|min:0.01',
         ]);
 
         try {
@@ -108,7 +108,7 @@ class OperationController extends Controller
     {
         $data = $request->validate([
             'wallet_id' => 'required|integer',
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|min:0.01',
         ]);
 
         try {
@@ -144,7 +144,7 @@ class OperationController extends Controller
         $data = $request->validate([
             'from_wallet_id' => 'required|integer',
             'to_wallet_id' => 'required|integer',
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|min:0.01',
         ]);
 
         try {

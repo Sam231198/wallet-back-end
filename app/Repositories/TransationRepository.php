@@ -11,14 +11,18 @@ class TransationRepository
 
     public function getByWalletId(int $id): ?TransationEntity
     {
-        $transaction = $this->transation->where('wallet_id', $id)->first();
+        $transaction = $this->transation
+            ->where('wallet_id', $id)
+            ->whereOr('wallet_transfer_id', $id)->first();
 
         return $transaction ? TransationEntity::fromArray($transaction->toArray()) : null;
     }
 
     public function getListByWalletId(int $id, int $limit = 10, int $offset = 0): array
     {
-        return $this->transation->where('wallet_id', $id)
+        return $this->transation
+            ->where('wallet_id', $id)
+            ->whereOr('wallet_transfer_id', $id)
             ->skip($offset)
             ->take($limit)
             ->get()
@@ -44,7 +48,7 @@ class TransationRepository
         if ($wallet) {
             $wallet->update($transactionEntity->toArray());
         } else {
-            throw new \Exception("Transation not found");
+            throw new \Exception('Transation not found');
         }
 
         return TransationEntity::fromArray($wallet->toArray());
@@ -55,7 +59,7 @@ class TransationRepository
         $wallet = $this->transation->find($id);
 
         if (! $wallet) {
-            throw new \Exception("Transation not found");
+            throw new \Exception('Transation not found');
         }
 
         return (bool) $wallet->delete();
