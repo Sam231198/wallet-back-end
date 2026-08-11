@@ -6,10 +6,18 @@ on:
   pull_request:
     branches: [master]
 
-env:
-  PHP_VERSION: '8.4'
-  NODE_VERSION: '20'
 
+env:
+  PHP_VERSION: "8.4"
+  NODE_VERSION: "20"
+  # Variáveis adicionadas para forçar a conexão correta no CI:
+  DB_CONNECTION: mysql
+  DB_HOST: 127.0.0.1
+  DB_PORT: 3306
+  DB_DATABASE: laravel_ci
+  DB_USERNAME: laravel
+  DB_PASSWORD: laravel
+  
 jobs:
   laravel-tests:
     runs-on: ubuntu-latest
